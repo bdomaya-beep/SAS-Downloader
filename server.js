@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
+const OPEN_ADMIN_ACCESS = (process.env.OPEN_ADMIN_ACCESS || 'true').trim().toLowerCase() === 'true';
 const DATA_FILE = path.join(__dirname, 'data', 'apps.json');
 let runtimeAdminPassword = ADMIN_PASSWORD;
 
@@ -28,6 +29,11 @@ function isValidSession(token) {
 }
 
 function requireAdmin(req, res, next) {
+  if (OPEN_ADMIN_ACCESS) {
+    next();
+    return;
+  }
+
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   if (!token || !isValidSession(token)) {
@@ -54,6 +60,10 @@ app.get('/health', (_, res) => {
 });
 
 app.get('/api/admin/setup-status', (_, res) => {
+  if (OPEN_ADMIN_ACCESS) {
+    return res.json({ isSetup: true, managedBy: 'open' });
+  }
+
   res.json({
     isSetup: !!runtimeAdminPassword,
     managedBy: ADMIN_PASSWORD ? 'env' : (runtimeAdminPassword ? 'runtime' : 'none')
@@ -61,6 +71,10 @@ app.get('/api/admin/setup-status', (_, res) => {
 });
 
 app.post('/api/admin/setup', (req, res) => {
+  if (OPEN_ADMIN_ACCESS) {
+    return res.status(200).json({ ok: true, message: 'Open admin access is enabled.' });
+  }
+
   if (ADMIN_PASSWORD) {
     return res.status(409).json({
       error: 'Admin password is managed by environment variable ADMIN_PASSWORD.'
@@ -88,6 +102,12 @@ app.post('/api/admin/setup', (req, res) => {
 });
 
 app.post('/api/admin/login', (req, res) => {
+  if (OPEN_ADMIN_ACCESS) {
+    const token = issueToken();
+    sessions.set(token, { expiresAt: Date.now() + 8 * 60 * 60 * 1000 });
+    return res.json({ token, mode: 'open' });
+  }
+
   const { password } = req.body || {};
   const inputPassword = String(password || '');
 

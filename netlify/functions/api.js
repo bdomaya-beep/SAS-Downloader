@@ -3,6 +3,7 @@ const { getStore } = require('@netlify/blobs');
 
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
 const TOKEN_SECRET = process.env.ADMIN_JWT_SECRET || 'change-this-admin-jwt-secret';
+const OPEN_ADMIN_ACCESS = (process.env.OPEN_ADMIN_ACCESS || 'true').trim().toLowerCase() === 'true';
 const APPS_KEY = 'apps.json';
 const ADMIN_PASSWORD_KEY = 'admin-password.json';
 const store = getStore('vitech-sas-downloader');
@@ -111,6 +112,7 @@ function getBearerToken(event) {
 }
 
 function isAuthorized(event) {
+  if (OPEN_ADMIN_ACCESS) return true;
   const token = getBearerToken(event);
   return !!verifyToken(token);
 }
@@ -133,6 +135,10 @@ async function readStoredAdminAuth() {
 }
 
 async function getAdminAuthStatus() {
+  if (OPEN_ADMIN_ACCESS) {
+    return { isSetup: true, managedBy: 'open' };
+  }
+
   if (ADMIN_PASSWORD) {
     return { isSetup: true, managedBy: 'env' };
   }
@@ -146,6 +152,7 @@ async function getAdminAuthStatus() {
 }
 
 async function verifyAdminPassword(password) {
+  if (OPEN_ADMIN_ACCESS) return true;
   if (!password) return false;
   if (ADMIN_PASSWORD) return password === ADMIN_PASSWORD;
 
@@ -215,6 +222,10 @@ exports.handler = async (event) => {
     }
 
     if (method === 'POST' && routePath === '/admin/setup') {
+      if (OPEN_ADMIN_ACCESS) {
+        return json(200, { ok: true, message: 'Open admin access is enabled.' });
+      }
+
       if (ADMIN_PASSWORD) {
         return json(409, {
           error: 'Admin password is managed by environment variable ADMIN_PASSWORD.'
@@ -243,6 +254,14 @@ exports.handler = async (event) => {
     }
 
     if (method === 'POST' && routePath === '/admin/login') {
+      if (OPEN_ADMIN_ACCESS) {
+        const token = signToken({
+          role: 'admin',
+          exp: Date.now() + 8 * 60 * 60 * 1000
+        });
+        return json(200, { token, mode: 'open' });
+      }
+
       const body = parseBody(event);
       const inputPassword = String(body.password || '');
 

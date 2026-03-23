@@ -84,8 +84,10 @@
             <p class="access-subtitle">Enter your admin password to open the backend panel.</p>
 
             <form id="access-form" class="access-form">
-                <label for="admin-password">Password</label>
-                <input id="admin-password" type="password" autocomplete="current-password" required>
+                <div id="password-row">
+                    <label for="admin-password">Password</label>
+                    <input id="admin-password" type="password" autocomplete="current-password" required>
+                </div>
                 <div id="confirm-wrap" style="display: none;">
                     <label for="admin-password-confirm" style="margin-top: 0.8rem; display: block;">Confirm Password</label>
                     <input id="admin-password-confirm" type="password" autocomplete="new-password">
@@ -100,6 +102,7 @@
 
     <script>
         let setupMode = false;
+        let openMode = false;
 
         function showError(message) {
             const error = document.getElementById('access-error');
@@ -148,7 +151,20 @@
                 const confirmWrap = document.getElementById('confirm-wrap');
                 const confirmInput = document.getElementById('admin-password-confirm');
                 const passwordInput = document.getElementById('admin-password');
+                const passwordRow = document.getElementById('password-row');
                 const submitBtn = document.getElementById('submit-btn');
+
+                openMode = status.managedBy === 'open';
+                if (openMode) {
+                    title.textContent = 'Admin Access';
+                    subtitle.textContent = 'Open mode is enabled. Click below to enter admin now.';
+                    submitBtn.textContent = 'Enter Admin Panel';
+                    passwordRow.style.display = 'none';
+                    confirmWrap.style.display = 'none';
+                    passwordInput.required = false;
+                    confirmInput.required = false;
+                    return;
+                }
 
                 setupMode = !status.isSetup;
                 if (setupMode) {
@@ -172,6 +188,11 @@
             const confirmPassword = document.getElementById('admin-password-confirm').value;
 
             try {
+                if (openMode) {
+                    await loginWithPassword('open-access');
+                    return;
+                }
+
                 if (setupMode) {
                     const setupResponse = await fetch('/api/admin/setup', {
                         method: 'POST',
