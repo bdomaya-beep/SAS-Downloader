@@ -244,14 +244,21 @@ exports.handler = async (event) => {
 
     if (method === 'POST' && routePath === '/admin/login') {
       const body = parseBody(event);
+      const inputPassword = String(body.password || '');
+
+      // Backward-compatible bootstrap: if no admin password exists yet,
+      // first successful login attempt becomes the initial password setup.
+      const status = await getAdminAuthStatus();
+      if (!status.isSetup) {
+        if (inputPassword.length < 8) {
+          return json(400, { error: 'Password must be at least 8 characters.' });
+        }
+
+        await setAdminPassword(inputPassword);
+      }
+
       const isValid = await verifyAdminPassword(body.password);
       if (!isValid) {
-        const status = await getAdminAuthStatus();
-        if (!status.isSetup) {
-          return json(428, {
-            error: 'Admin password is not configured. Create one from /admin-access first.'
-          });
-        }
         return json(401, { error: 'Invalid credentials' });
       }
 

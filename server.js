@@ -88,14 +88,18 @@ app.post('/api/admin/setup', (req, res) => {
 });
 
 app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body || {};
+  const inputPassword = String(password || '');
+
+  // Backward-compatible bootstrap for one-field login screen.
   if (!runtimeAdminPassword) {
-    return res.status(503).json({
-      error: 'Admin password is not configured. Create one from /admin-access first.'
-    });
+    if (inputPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    }
+    runtimeAdminPassword = inputPassword;
   }
 
-  const { password } = req.body || {};
-  if (!password || password !== runtimeAdminPassword) {
+  if (!inputPassword || inputPassword !== runtimeAdminPassword) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
