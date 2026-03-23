@@ -7,6 +7,8 @@ const OPEN_ADMIN_ACCESS = (process.env.OPEN_ADMIN_ACCESS || 'true').trim().toLow
 const APPS_KEY = 'apps.json';
 const ADMIN_PASSWORD_KEY = 'admin-password.json';
 const store = getStore('vitech-sas-downloader');
+let storageMode = 'blobs';
+let inMemoryApps = null;
 
 const DEFAULT_APPS = [
   {
@@ -177,23 +179,48 @@ async function setAdminPassword(password) {
 }
 
 async function readApps() {
-  const raw = await store.get(APPS_KEY, { consistency: 'strong' });
-  if (!raw) {
-    await writeApps(DEFAULT_APPS);
-    return [...DEFAULT_APPS];
+  if (storageMode === 'memory') {
+    if (!inMemoryApps) {
+      inMemoryApps = JSON.parse(JSON.stringify(DEFAULT_APPS));
+    }
+    return JSON.parse(JSON.stringify(inMemoryApps));
   }
 
   try {
+    const raw = await store.get(APPS_KEY, { consistency: 'strong' });
+    if (!raw) {
+      await writeApps(DEFAULT_APPS);
+      return JSON.parse(JSON.stringify(DEFAULT_APPS));
+    }
+
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
+    if (Array.isArray(parsed)) {
+      inMemoryApps = JSON.parse(JSON.stringify(parsed));
+      return parsed;
+    }
+
     await writeApps(DEFAULT_APPS);
-    return [...DEFAULT_APPS];
+    return JSON.parse(JSON.stringify(DEFAULT_APPS));
+  } catch {
+    storageMode = 'memory';
+    if (!inMemoryApps) {
+      inMemoryApps = JSON.parse(JSON.stringify(DEFAULT_APPS));
+    }
+    return JSON.parse(JSON.stringify(inMemoryApps));
   }
 }
 
 async function writeApps(apps) {
-  await store.set(APPS_KEY, JSON.stringify(apps));
+  inMemoryApps = JSON.parse(JSON.stringify(apps));
+  if (storageMode === 'memory') {
+    return;
+  }
+
+  try {
+    await store.set(APPS_KEY, JSON.stringify(apps));
+  } catch {
+    storageMode = 'memory';
+  }
 }
 
 function getRoutePath(event) {
@@ -213,7 +240,7 @@ exports.handler = async (event) => {
 
   try {
     if (method === 'GET' && routePath === '/health') {
-      return json(200, { ok: true, runtime: 'netlify-function' });
+      return json(200, { ok: true, runtime: 'netlify-function', storageMode });
     }
 
     if (method === 'GET' && routePath === '/admin/setup-status') {

@@ -17,6 +17,9 @@ async function apiRequest(path, options = {}) {
             const data = await response.json();
             if (data && data.error) {
                 message = data.error;
+                if (data.detail) {
+                    message = `${message}: ${data.detail}`;
+                }
             }
         } catch {
             // ignore json parse errors
