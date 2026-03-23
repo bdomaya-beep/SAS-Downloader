@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Access - Vitech SAS Downloader</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .access-wrap {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .access-card {
+            width: 100%;
+            max-width: 460px;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+        }
+
+        .access-title {
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+            color: var(--text-dark);
+        }
+
+        .access-subtitle {
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .access-form {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .access-form label {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .access-form input {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.8rem 0.9rem;
+            font-size: 1rem;
+        }
+
+        .access-form input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.15);
+        }
+
+        .access-note {
+            margin-top: 1rem;
+            color: var(--text-light);
+            font-size: 0.92rem;
+        }
+
+        .access-error {
+            color: #b91c1c;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 0.65rem 0.8rem;
+            display: none;
+        }
+
+        .access-error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="access-wrap">
+        <section class="access-card" aria-label="Admin login">
+            <h1 class="access-title">Admin Access</h1>
+            <p class="access-subtitle">Enter your admin password to open the backend panel.</p>
+
+            <form id="access-form" class="access-form">
+                <label for="admin-password">Password</label>
+                <input id="admin-password" type="password" autocomplete="current-password" required>
+                <button type="submit" class="btn btn-primary">Open Admin Panel</button>
+                <div id="access-error" class="access-error">Invalid password. Try again.</div>
+            </form>
+
+            <p class="access-note">Only share this URL with admins: <strong>/admin-access</strong></p>
+        </section>
+    </div>
+
+    <script>
+        document.getElementById('access-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const password = document.getElementById('admin-password').value;
+            const error = document.getElementById('access-error');
+
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Invalid password');
+                }
+
+                const data = await response.json();
+                sessionStorage.setItem('vitech_admin_token', data.token);
+                window.location.replace('/admin');
+            } catch {
+                error.classList.add('show');
+            }
+        });
+    </script>
+</body>
+</html>

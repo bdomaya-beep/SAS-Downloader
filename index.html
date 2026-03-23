@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitech SAS Downloader</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <h1>Vitech SAS Downloader</h1>
+            </div>
+            <div class="navbar-menu">
+                <a href="#home" class="nav-link active">Home</a>
+                <a href="#downloads" class="nav-link">Downloads</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <h2>Download Your Apps, Fast & Easy</h2>
+            <p>Access all Vitech SAS applications with a single click. Professional, reliable, and secure.</p>
+        </div>
+    </section>
+
+    <!-- Downloads Section -->
+    <section id="downloads" class="downloads-section">
+        <div class="container">
+            <h2>Available Downloads</h2>
+            <div id="apps-container" class="apps-grid">
+                <!-- Apps loaded dynamically from JavaScript -->
+                <div class="loading">Loading apps...</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="total-downloads">0</h3>
+                    <p>Total Downloads</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="total-apps">0</h3>
+                    <p>Apps Available</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="last-updated">Never</h3>
+                    <p>Last Updated</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Vitech SAS Downloader. All rights reserved.</p>
+            <p>Professional App Distribution Platform</p>
+        </div>
+    </footer>
+
+    <!-- Modal for App Details & Changelog -->
+    <div id="app-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title"></h2>
+            <div id="modal-body">
+                <div class="modal-section">
+                    <h4>Description</h4>
+                    <p id="modal-description"></p>
+                </div>
+                <div class="modal-section">
+                    <h4>Version</h4>
+                    <p id="modal-version"></p>
+                </div>
+                <div class="modal-section">
+                    <h4>Changelog</h4>
+                    <div id="modal-changelog"></div>
+                </div>
+                <div class="modal-section">
+                    <h4>Download Statistics</h4>
+                    <p>Times Downloaded: <strong id="modal-downloads">0</strong></p>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <a id="modal-download-btn" href="#" class="btn btn-primary" download>Download Now</a>
+                <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

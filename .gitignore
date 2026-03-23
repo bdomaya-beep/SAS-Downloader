@@ -1,0 +1,22 @@
+# Node modules (if using build tools in future)
+node_modules/
+package-lock.json
+
+# Build artifacts
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+

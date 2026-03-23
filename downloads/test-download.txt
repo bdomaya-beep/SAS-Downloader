@@ -1,0 +1,2 @@
+Vitech SAS Downloader test file.
+If you downloaded this, your /downloads setup is working.
