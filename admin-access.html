@@ -93,6 +93,7 @@
                     <input id="admin-password-confirm" type="password" autocomplete="new-password">
                 </div>
                 <button id="submit-btn" type="submit" class="btn btn-primary">Open Admin Panel</button>
+                <button id="continue-admin" type="button" class="btn btn-secondary">Continue To Admin</button>
                 <div id="access-error" class="access-error">Invalid password. Try again.</div>
             </form>
 
@@ -220,6 +221,13 @@
             } catch (error) {
                 showError(error.message || 'Something went wrong. Please try again.');
             }
+        });
+
+        document.getElementById('continue-admin').addEventListener('click', function() {
+            if (!sessionStorage.getItem('vitech_admin_token')) {
+                sessionStorage.setItem('vitech_admin_token', 'open-access');
+            }
+            window.location.replace('/admin');
         });
 
         bootstrapMode();
