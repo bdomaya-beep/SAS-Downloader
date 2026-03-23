@@ -12,14 +12,20 @@ Choose your preferred hosting platform below. Most are free and take 5 minutes t
 2. Drag & drop your entire `SAS Downloader Website` folder
 3. Your site is LIVE! You'll get a URL like: `https://vibrant-maldives-abc123.netlify.app`
 
-**Set admin password (important):**
+**Admin password setup (important):**
+Option A - first-time setup in website (recommended):
+1. Open `/admin-access` on your deployed site
+2. If no password exists yet, you'll see a "Create Admin Password" form
+3. Create password once, then use it to log in
+
+Option B - force password from Netlify environment variable:
 1. Open your Netlify site dashboard
 2. Go to Site configuration → Environment variables
 3. Add variable `ADMIN_PASSWORD` with your new strong password
 4. Optional: add `ADMIN_JWT_SECRET` with a long random string
 5. Trigger redeploy: Deploys → Trigger deploy → Deploy site
 
-If `ADMIN_PASSWORD` is missing, admin login is disabled by design.
+If `ADMIN_PASSWORD` is set, it overrides website-created password setup.
 
 **Features:**
 - ✅ Free tier with 100GB bandwidth

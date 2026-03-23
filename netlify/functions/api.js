@@ -2,8 +2,9 @@ const crypto = require('crypto');
 const { getStore } = require('@netlify/blobs');
 
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
-const TOKEN_SECRET = process.env.ADMIN_JWT_SECRET || `${ADMIN_PASSWORD}_secret`;
+const TOKEN_SECRET = process.env.ADMIN_JWT_SECRET || 'change-this-admin-jwt-secret';
 const APPS_KEY = 'apps.json';
+const ADMIN_PASSWORD_KEY = 'admin-password.json';
 const store = getStore('vitech-sas-downloader');
 
 const DEFAULT_APPS = [
@@ -114,6 +115,60 @@ function isAuthorized(event) {
   return !!verifyToken(token);
 }
 
+function hashPassword(password, salt) {
+  return crypto.scryptSync(password, salt, 64).toString('hex');
+}
+
+async function readStoredAdminAuth() {
+  const raw = await store.get(ADMIN_PASSWORD_KEY, { consistency: 'strong' });
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.salt || !parsed.hash) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+async function getAdminAuthStatus() {
+  if (ADMIN_PASSWORD) {
+    return { isSetup: true, managedBy: 'env' };
+  }
+
+  const stored = await readStoredAdminAuth();
+  if (stored) {
+    return { isSetup: true, managedBy: 'storage' };
+  }
+
+  return { isSetup: false, managedBy: 'none' };
+}
+
+async function verifyAdminPassword(password) {
+  if (!password) return false;
+  if (ADMIN_PASSWORD) return password === ADMIN_PASSWORD;
+
+  const stored = await readStoredAdminAuth();
+  if (!stored) return false;
+
+  const hash = hashPassword(String(password), stored.salt);
+  return hash === stored.hash;
+}
+
+async function setAdminPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = hashPassword(password, salt);
+  await store.set(
+    ADMIN_PASSWORD_KEY,
+    JSON.stringify({
+      salt,
+      hash,
+      createdAt: Date.now()
+    })
+  );
+}
+
 async function readApps() {
   const raw = await store.get(APPS_KEY, { consistency: 'strong' });
   if (!raw) {
@@ -154,15 +209,49 @@ exports.handler = async (event) => {
       return json(200, { ok: true, runtime: 'netlify-function' });
     }
 
-    if (method === 'POST' && routePath === '/admin/login') {
-      if (!ADMIN_PASSWORD) {
-        return json(503, {
-          error: 'Admin password is not configured. Set ADMIN_PASSWORD in Netlify environment variables.'
+    if (method === 'GET' && routePath === '/admin/setup-status') {
+      const status = await getAdminAuthStatus();
+      return json(200, status);
+    }
+
+    if (method === 'POST' && routePath === '/admin/setup') {
+      if (ADMIN_PASSWORD) {
+        return json(409, {
+          error: 'Admin password is managed by environment variable ADMIN_PASSWORD.'
         });
       }
 
+      const status = await getAdminAuthStatus();
+      if (status.isSetup) {
+        return json(409, { error: 'Admin password is already configured.' });
+      }
+
       const body = parseBody(event);
-      if (!body.password || body.password !== ADMIN_PASSWORD) {
+      const password = String(body.password || '');
+      const confirmPassword = String(body.confirmPassword || '');
+
+      if (password.length < 8) {
+        return json(400, { error: 'Password must be at least 8 characters.' });
+      }
+
+      if (password !== confirmPassword) {
+        return json(400, { error: 'Passwords do not match.' });
+      }
+
+      await setAdminPassword(password);
+      return json(201, { ok: true });
+    }
+
+    if (method === 'POST' && routePath === '/admin/login') {
+      const body = parseBody(event);
+      const isValid = await verifyAdminPassword(body.password);
+      if (!isValid) {
+        const status = await getAdminAuthStatus();
+        if (!status.isSetup) {
+          return json(428, {
+            error: 'Admin password is not configured. Create one from /admin-access first.'
+          });
+        }
         return json(401, { error: 'Invalid credentials' });
       }
 

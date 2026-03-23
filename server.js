@@ -7,6 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
 const DATA_FILE = path.join(__dirname, 'data', 'apps.json');
+let runtimeAdminPassword = ADMIN_PASSWORD;
 
 const sessions = new Map();
 
@@ -52,15 +53,49 @@ app.get('/health', (_, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/admin/setup-status', (_, res) => {
+  res.json({
+    isSetup: !!runtimeAdminPassword,
+    managedBy: ADMIN_PASSWORD ? 'env' : (runtimeAdminPassword ? 'runtime' : 'none')
+  });
+});
+
+app.post('/api/admin/setup', (req, res) => {
+  if (ADMIN_PASSWORD) {
+    return res.status(409).json({
+      error: 'Admin password is managed by environment variable ADMIN_PASSWORD.'
+    });
+  }
+
+  if (runtimeAdminPassword) {
+    return res.status(409).json({ error: 'Admin password is already configured.' });
+  }
+
+  const { password, confirmPassword } = req.body || {};
+  const first = String(password || '');
+  const second = String(confirmPassword || '');
+
+  if (first.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  }
+
+  if (first !== second) {
+    return res.status(400).json({ error: 'Passwords do not match.' });
+  }
+
+  runtimeAdminPassword = first;
+  res.status(201).json({ ok: true });
+});
+
 app.post('/api/admin/login', (req, res) => {
-  if (!ADMIN_PASSWORD) {
+  if (!runtimeAdminPassword) {
     return res.status(503).json({
-      error: 'Admin password is not configured. Set ADMIN_PASSWORD in your environment variables.'
+      error: 'Admin password is not configured. Create one from /admin-access first.'
     });
   }
 
   const { password } = req.body || {};
-  if (!password || password !== ADMIN_PASSWORD) {
+  if (!password || password !== runtimeAdminPassword) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
