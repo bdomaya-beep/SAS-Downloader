@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const { getStore } = require('@netlify/blobs');
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'ChangeThisStrongPassword';
+const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
 const TOKEN_SECRET = process.env.ADMIN_JWT_SECRET || `${ADMIN_PASSWORD}_secret`;
 const APPS_KEY = 'apps.json';
 const store = getStore('vitech-sas-downloader');
@@ -155,6 +155,12 @@ exports.handler = async (event) => {
     }
 
     if (method === 'POST' && routePath === '/admin/login') {
+      if (!ADMIN_PASSWORD) {
+        return json(503, {
+          error: 'Admin password is not configured. Set ADMIN_PASSWORD in Netlify environment variables.'
+        });
+      }
+
       const body = parseBody(event);
       if (!body.password || body.password !== ADMIN_PASSWORD) {
         return json(401, { error: 'Invalid credentials' });

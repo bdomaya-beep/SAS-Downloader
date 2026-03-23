@@ -5,7 +5,7 @@ const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'ChangeThisStrongPassword';
+const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
 const DATA_FILE = path.join(__dirname, 'data', 'apps.json');
 
 const sessions = new Map();
@@ -53,6 +53,12 @@ app.get('/health', (_, res) => {
 });
 
 app.post('/api/admin/login', (req, res) => {
+  if (!ADMIN_PASSWORD) {
+    return res.status(503).json({
+      error: 'Admin password is not configured. Set ADMIN_PASSWORD in your environment variables.'
+    });
+  }
+
   const { password } = req.body || {};
   if (!password || password !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: 'Invalid credentials' });
