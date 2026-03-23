@@ -70,6 +70,31 @@ app.get('/api/admin/setup-status', (_, res) => {
   });
 });
 
+app.get('/api/downloads/files', async (_, res) => {
+  try {
+    const downloadsDir = path.join(__dirname, 'downloads');
+    const entries = await fs.readdir(downloadsDir, { withFileTypes: true });
+    const files = entries
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .filter((name) => name !== 'files.json');
+
+    if (files.length > 0) {
+      return res.json(files);
+    }
+
+    try {
+      const manifestRaw = await fs.readFile(path.join(downloadsDir, 'files.json'), 'utf8');
+      const manifest = JSON.parse(manifestRaw);
+      return res.json(Array.isArray(manifest) ? manifest : []);
+    } catch {
+      return res.json([]);
+    }
+  } catch {
+    return res.json([]);
+  }
+});
+
 app.post('/api/admin/setup', (req, res) => {
   if (OPEN_ADMIN_ACCESS) {
     return res.status(200).json({ ok: true, message: 'Open admin access is enabled.' });

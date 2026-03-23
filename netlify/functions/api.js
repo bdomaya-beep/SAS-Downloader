@@ -1,4 +1,6 @@
 const crypto = require('crypto');
+const fs = require('fs/promises');
+const path = require('path');
 const { getStore } = require('@netlify/blobs');
 
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
@@ -223,6 +225,30 @@ async function writeApps(apps) {
   }
 }
 
+async function readDownloadsManifestFromDisk() {
+  try {
+    const manifestPath = path.join(process.cwd(), 'downloads', 'files.json');
+    const raw = await fs.readFile(manifestPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((name) => typeof name === 'string' && name.trim()) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function listDownloadsFromDisk() {
+  try {
+    const downloadsDir = path.join(process.cwd(), 'downloads');
+    const entries = await fs.readdir(downloadsDir, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .filter((name) => name !== 'files.json');
+  } catch {
+    return [];
+  }
+}
+
 function getRoutePath(event) {
   const explicit = event.pathParameters && event.pathParameters.splat;
   if (explicit) return `/${explicit}`;
@@ -246,6 +272,16 @@ exports.handler = async (event) => {
     if (method === 'GET' && routePath === '/admin/setup-status') {
       const status = await getAdminAuthStatus();
       return json(200, status);
+    }
+
+    if (method === 'GET' && routePath === '/downloads/files') {
+      const diskFiles = await listDownloadsFromDisk();
+      if (diskFiles.length > 0) {
+        return json(200, diskFiles);
+      }
+
+      const manifestFiles = await readDownloadsManifestFromDisk();
+      return json(200, manifestFiles);
     }
 
     if (method === 'POST' && routePath === '/admin/setup') {

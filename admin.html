@@ -334,6 +334,14 @@
                             </div>
 
                             <div class="form-group">
+                                <label for="deployed-file-select">Pick Deployed File (from website)</label>
+                                <select id="deployed-file-select">
+                                    <option value="">Loading deployed files...</option>
+                                </select>
+                                <small style="color: var(--text-light); margin-top: 0.3rem; display: block;">Loaded from /api/downloads/files. Selecting one fills the file name above.</small>
+                            </div>
+
+                            <div class="form-group">
                                 <label for="app-changelog">Changelog (one per line)</label>
                                 <textarea id="app-changelog" placeholder="v2.5.0 - New features&#10;v2.4.0 - Bug fixes"></textarea>
                             </div>
@@ -397,6 +405,7 @@
         let adminApps = [];
 
         document.addEventListener('DOMContentLoaded', async function() {
+            await loadDeployedFiles();
             await renderAppsList();
             updateAdminStats();
 
@@ -420,6 +429,12 @@
             localFileInput.addEventListener('change', function() {
                 if (this.files && this.files[0]) {
                     document.getElementById('app-filename-full').value = this.files[0].name;
+                }
+            });
+
+            document.getElementById('deployed-file-select').addEventListener('change', function() {
+                if (this.value) {
+                    document.getElementById('app-filename-full').value = this.value;
                 }
             });
 
@@ -504,6 +519,30 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        async function loadDeployedFiles() {
+            const select = document.getElementById('deployed-file-select');
+            try {
+                const response = await fetch('/api/downloads/files?ts=' + Date.now(), {
+                    cache: 'no-store'
+                });
+
+                if (!response.ok) {
+                    throw new Error('downloads API unavailable');
+                }
+
+                const files = await response.json();
+                if (!Array.isArray(files) || files.length === 0) {
+                    select.innerHTML = '<option value="">No deployed files listed</option>';
+                    return;
+                }
+
+                select.innerHTML = '<option value="">Select deployed file...</option>' +
+                    files.map((name) => `<option value="${name}">${name}</option>`).join('');
+            } catch {
+                select.innerHTML = '<option value="">No deployed files found</option>';
+            }
         }
 
         function editApp(appId) {
