@@ -16,16 +16,10 @@
         <p>SAS Downloader for a Quick and Easy Download for our Clients!</p>
       </header>
 
-      <section class="upload-panel card">
-        <h2>Upload a file</h2>
-        <form id="uploadForm">
-          <label class="file-picker" for="fileInput">
-            <span>Select file</span>
-            <input id="fileInput" type="file" name="file" required />
-          </label>
-          <button id="uploadBtn" type="submit">Upload</button>
-        </form>
-        <p id="uploadStatus" class="status"></p>
+      <!-- Public site is viewer-only. Uploads are managed in the admin panel. -->
+      <section class="intro-panel card">
+        <h2>Browse files</h2>
+        <p class="status">This is the public file listing. To upload or manage files, visit the admin console.</p>
       </section>
 
       <section class="files-panel card">
@@ -35,6 +29,14 @@
         </div>
         <div id="filesList" class="files-list"></div>
       </section>
+
+      <!-- Details modal -->
+      <div id="detailsModal" class="modal" style="display:none">
+        <div class="modal-content">
+          <button id="modalClose" class="modal-close">×</button>
+          <div id="modalBody"></div>
+        </div>
+      </div>
     </main>
 
     <script src="app.js"></script>

@@ -159,6 +159,39 @@ button {
   gap: 0.3rem;
 }
 
+.file-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.file-icon.large { width:72px; height:72px }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4,8,16,0.6);
+  z-index: 1200;
+}
+.modal-content {
+  background: linear-gradient(160deg, var(--card) 0%, var(--card-2) 100%);
+  border: 1px solid var(--border);
+  padding: 1rem;
+  border-radius: 12px;
+  width: min(820px, 94vw);
+}
+.modal-close {
+  float: right;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.4rem;
+  border: none;
+  cursor: pointer;
+}
+
 .file-top {
   display: flex;
   justify-content: space-between;
