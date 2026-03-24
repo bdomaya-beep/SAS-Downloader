@@ -61,8 +61,7 @@ module.exports = async (req, res) => {
       Bucket: process.env.S3_BUCKET,
       Key: indexKey,
       Body: JSON.stringify(items, null, 2),
-      ContentType: 'application/json',
-      ACL: 'public-read'
+      ContentType: 'application/json'
     }));
 
     return res.status(201).json({ record });

@@ -43,7 +43,7 @@ module.exports = async (req, res) => {
     }
 
     // update index
-    await s3.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: indexKey, Body: JSON.stringify(items, null, 2), ContentType: 'application/json', ACL: 'public-read' }));
+    await s3.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: indexKey, Body: JSON.stringify(items, null, 2), ContentType: 'application/json' }));
 
     return res.json({ message: 'Deleted' });
   } catch (err) {
