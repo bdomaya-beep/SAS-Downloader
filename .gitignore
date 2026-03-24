@@ -1,28 +1,7 @@
-# Dependencies
 node_modules/
-
-# Build artifacts
-dist/
-build/
-.next/
-out/
-
-# Local environment and tooling
-.env.local
-.env.*.local
-.qodo/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
+.env
 .DS_Store
 Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
+uploads/*
+!uploads/.gitkeep
 

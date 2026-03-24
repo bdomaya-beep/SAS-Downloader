@@ -1,23 +1,14 @@
 {
-  "name": "vitech-sas-downloader",
-  "version": "2.0.0",
-  "private": true,
-  "description": "Backend-powered Vitech SAS Downloader",
+  "name": "mediafire-style-uploader",
+  "version": "1.0.0",
+  "description": "Simple file upload and share website",
   "main": "server.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "dependencies": {
-    "@netlify/blobs": "^9.1.0",
-    "@types/node": "^25.5.0",
-    "@types/react": "^19.2.14",
-    "express": "^4.19.2",
-    "next": "^16.2.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "typescript": "^5.9.3"
+    "express": "^4.21.2",
+    "multer": "^2.1.1"
   }
 }
