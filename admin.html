@@ -330,7 +330,7 @@
                             <div class="form-group">
                                 <label for="app-file-local">Pick Local File (optional helper)</label>
                                 <input type="file" id="app-file-local" accept=".exe,.apk,.msi,.zip,.7z,.rar,.dmg,.pkg,.deb,.rpm,.pdf">
-                                <small style="color: var(--text-light); margin-top: 0.3rem; display: block;">This does not upload from browser on static hosting. It only auto-fills the file name.</small>
+                                <small style="color: var(--text-light); margin-top: 0.3rem; display: block;">In cloud mode this uploads to storage. Without cloud mode it only auto-fills file name.</small>
                             </div>
 
                             <div class="form-group">
@@ -399,12 +399,21 @@
         </div>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-client.js"></script>
     <script src="script.js"></script>
     <script>
         const adminToken = sessionStorage.getItem('vitech_admin_token');
+        const cloudMode = window.vitechApi && window.vitechApi.isCloudEnabled();
         let adminApps = [];
 
         document.addEventListener('DOMContentLoaded', async function() {
+            if (cloudMode && sessionStorage.getItem('vitech_admin_auth') !== '1') {
+                window.location.replace('/admin-access');
+                return;
+            }
+
             await loadDeployedFiles();
             await renderAppsList();
             updateAdminStats();
@@ -422,6 +431,7 @@
                 }
 
                 sessionStorage.removeItem('vitech_admin_token');
+                sessionStorage.removeItem('vitech_admin_auth');
                 window.location.replace('/admin-access');
             });
 
@@ -444,10 +454,23 @@
                 const submitBtn = this.querySelector('button[type="submit"]');
                 const appId = submitBtn.dataset.appId;
                 const filename = document.getElementById('app-filename-full').value.trim();
+                const localFile = document.getElementById('app-file-local').files[0] || null;
+                const hasFileInput = !!localFile;
 
-                if (!filename) {
+                if (!filename && !(cloudMode && hasFileInput)) {
                     showSuccessMessage('Please provide a file name first.');
                     return;
+                }
+
+                let resolvedFileName = filename;
+                let resolvedDownloadUrl = '/downloads/' + filename;
+
+                if (cloudMode && hasFileInput) {
+                    showSuccessMessage('Uploading file to cloud storage...');
+                    const uploaded = await window.vitechApi.uploadFile(localFile);
+                    resolvedFileName = uploaded.fileName;
+                    resolvedDownloadUrl = uploaded.downloadUrl;
+                    document.getElementById('app-filename-full').value = resolvedFileName;
                 }
 
                 const changelog = document.getElementById('app-changelog').value
@@ -459,8 +482,8 @@
                     name: document.getElementById('app-name').value,
                     version: document.getElementById('app-version').value,
                     description: document.getElementById('app-description').value,
-                    fileName: filename,
-                    downloadUrl: '/downloads/' + filename,
+                    fileName: resolvedFileName,
+                    downloadUrl: resolvedDownloadUrl,
                     changelog: changelog.length > 0 ? changelog : ['Initial release']
                 };
 
@@ -523,6 +546,11 @@
 
         async function loadDeployedFiles() {
             const select = document.getElementById('deployed-file-select');
+            if (cloudMode) {
+                select.innerHTML = '<option value="">Using cloud uploads (optional)</option>';
+                return;
+            }
+
             try {
                 const response = await fetch('/api/downloads/files?ts=' + Date.now(), {
                     cache: 'no-store'

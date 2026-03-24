@@ -1,10 +1,16 @@
-# Node modules (if using build tools in future)
+# Dependencies
 node_modules/
-package-lock.json
 
 # Build artifacts
 dist/
 build/
+.next/
+out/
+
+# Local environment and tooling
+.env.local
+.env.*.local
+.qodo/
 
 # IDE
 .vscode/

@@ -5,6 +5,10 @@
 const API_BASE = '/api';
 let appsCache = [];
 
+function cloudClient() {
+    return window.vitechCloud && window.vitechCloud.enabled ? window.vitechCloud : null;
+}
+
 function hasPublicUI() {
     return !!document.getElementById('apps-container');
 }
@@ -36,7 +40,8 @@ async function apiRequest(path, options = {}) {
 
 async function loadApps() {
     try {
-        appsCache = await apiRequest('/apps');
+        const cloud = cloudClient();
+        appsCache = cloud ? await cloud.getApps() : await apiRequest('/apps');
     } catch (error) {
         console.error('Failed to load apps:', error);
         appsCache = [];
@@ -84,7 +89,12 @@ async function downloadApp(appId, event) {
     if (!app) return;
 
     try {
-        await apiRequest(`/apps/${appId}/download`, { method: 'POST' });
+        const cloud = cloudClient();
+        if (cloud) {
+            await cloud.incrementDownload(appId);
+        } else {
+            await apiRequest(`/apps/${appId}/download`, { method: 'POST' });
+        }
         await loadApps();
     } catch (error) {
         console.error('Download counter update failed:', error);
@@ -215,44 +225,64 @@ document.head.appendChild(style);
 
 window.vitechApi = {
     getApps: async () => {
-        const apps = await apiRequest('/apps');
+        const cloud = cloudClient();
+        const apps = cloud ? await cloud.getApps() : await apiRequest('/apps');
         appsCache = apps;
         return apps;
     },
     addApp: async (appData, token) => {
-        const result = await apiRequest('/apps', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify(appData)
-        });
+        const cloud = cloudClient();
+        const result = cloud
+            ? await cloud.addApp(appData)
+            : await apiRequest('/apps', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(appData)
+            });
         await loadApps();
         return result;
     },
     editApp: async (appId, updates, token) => {
-        const result = await apiRequest(`/apps/${appId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify(updates)
-        });
+        const cloud = cloudClient();
+        const result = cloud
+            ? await cloud.editApp(appId, updates)
+            : await apiRequest(`/apps/${appId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(updates)
+            });
         await loadApps();
         return result;
     },
     deleteApp: async (appId, token) => {
-        await apiRequest(`/apps/${appId}`, {
-            method: 'DELETE',
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
+        const cloud = cloudClient();
+        if (cloud) {
+            await cloud.deleteApp(appId);
+        } else {
+            await apiRequest(`/apps/${appId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+        }
         await loadApps();
         return true;
     },
+    uploadFile: async (file) => {
+        const cloud = cloudClient();
+        if (!cloud) {
+            throw new Error('Cloud upload is not enabled.');
+        }
+        return cloud.uploadFile(file);
+    },
+    isCloudEnabled: () => !!cloudClient(),
     loadApps
 };
 

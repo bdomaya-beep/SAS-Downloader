@@ -101,9 +101,13 @@
         </section>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-client.js"></script>
     <script>
         let setupMode = false;
         let openMode = false;
+        const cloudMode = !!(window.vitechCloud && window.vitechCloud.enabled);
 
         function showError(message) {
             const error = document.getElementById('access-error');
@@ -144,9 +148,7 @@
 
         async function bootstrapMode() {
             try {
-                const response = await fetch('/api/admin/setup-status');
-                const status = response.ok ? await response.json() : { isSetup: true };
-
+                const continueBtn = document.getElementById('continue-admin');
                 const title = document.querySelector('.access-title');
                 const subtitle = document.querySelector('.access-subtitle');
                 const confirmWrap = document.getElementById('confirm-wrap');
@@ -154,6 +156,32 @@
                 const passwordInput = document.getElementById('admin-password');
                 const passwordRow = document.getElementById('password-row');
                 const submitBtn = document.getElementById('submit-btn');
+
+                if (cloudMode) {
+                    continueBtn.style.display = 'none';
+                    const status = await window.vitechCloud.getAdminSetupStatus();
+                    setupMode = !status.isSetup;
+
+                    if (setupMode) {
+                        title.textContent = 'Create Admin Password';
+                        subtitle.textContent = 'First-time setup for cloud mode. Create your admin password.';
+                        submitBtn.textContent = 'Create Password';
+                        confirmWrap.style.display = 'block';
+                        confirmInput.required = true;
+                        passwordInput.setAttribute('autocomplete', 'new-password');
+                    } else {
+                        title.textContent = 'Admin Access';
+                        subtitle.textContent = 'Enter your admin password to open the backend panel.';
+                        submitBtn.textContent = 'Open Admin Panel';
+                        confirmWrap.style.display = 'none';
+                        confirmInput.required = false;
+                        passwordRow.style.display = 'block';
+                    }
+                    return;
+                }
+
+                const response = await fetch('/api/admin/setup-status');
+                const status = response.ok ? await response.json() : { isSetup: true };
 
                 openMode = status.managedBy === 'open';
                 if (openMode) {
@@ -189,6 +217,15 @@
             const confirmPassword = document.getElementById('admin-password-confirm').value;
 
             try {
+                if (cloudMode) {
+                    if (setupMode) {
+                        await window.vitechCloud.setupAdminPassword(password, confirmPassword);
+                    }
+                    await window.vitechCloud.loginAdminPassword(password);
+                    window.location.replace('/admin');
+                    return;
+                }
+
                 if (openMode) {
                     await loginWithPassword('open-access');
                     return;
