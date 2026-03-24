@@ -37,6 +37,7 @@ module.exports = async (req, res) => {
       items = [];
     }
 
+    const { description, version } = body;
     const record = {
       id: cryptoId(),
       key,
@@ -46,7 +47,13 @@ module.exports = async (req, res) => {
       uploadedAt: new Date().toISOString(),
       downloads: 0,
       publicUrl,
+      description: description || '',
+      version: version || '',
+      history: []
     };
+    if (record.version) {
+      record.history.push({ when: record.uploadedAt, by: 'uploader', version: record.version, note: record.description });
+    }
 
     items.push(record);
 

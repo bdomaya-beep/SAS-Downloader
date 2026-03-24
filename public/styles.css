@@ -176,6 +176,29 @@ button {
   font-size: 0.92rem;
 }
 
+.badge {
+  display: inline-block;
+  background: rgba(51,214,166,0.12);
+  color: var(--brand);
+  padding: 0.12rem 0.45rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  margin-left: 0.5rem;
+}
+
+.file-desc {
+  color: var(--muted);
+  margin-top: 0.4rem;
+}
+
+.admin-top {
+  display:flex;
+  gap:0.5rem;
+  align-items:center;
+}
+
+.admin-top input { flex:1 }
+
 .file-actions {
   margin-top: 0.35rem;
   display: flex;

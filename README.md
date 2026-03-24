@@ -42,6 +42,16 @@ Vercel + S3 configuration (what to set)
 - Optional: `S3_PREFIX` — prefix/folder inside the bucket (defaults to `uploads/`).
 - Optional: `METADATA_KEY` — object key for file index (defaults to `files.json`).
 
+Admin configuration (secure)
+
+- `ADMIN_PASSWORD` — initial admin password used to obtain a short-lived management token (do not expose).
+- `ADMIN_JWT_SECRET` — secret used to sign admin JWTs (set this to a long random value).
+
+APIs added for management:
+- `POST /api/admin-login` — supply JSON `{ "password": "..." }` to receive a JWT token.
+- `POST /api/admin` — management actions (edit/markLatest/delete). Send `Authorization: Bearer <token>` header.
+- `GET /api/files` and `POST /api/record` remain as before.
+
 After setting these, Vercel functions in `api/` will provide:
 - `POST /api/presign` — returns `uploadUrl`, `key`, `publicUrl` for direct S3 PUT.
 - `POST /api/record` — record uploaded file metadata (writes/updates `files.json` in S3).

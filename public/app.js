@@ -57,11 +57,12 @@ function renderFiles(files) {
         <article class="file-item">
           <div class="file-top">
             <div class="file-name">${file.originalName}</div>
-            <div class="file-meta">${formatBytes(file.size)} • ${file.downloads || 0} downloads</div>
+            <div class="file-meta">${formatBytes(file.size)} • ${file.downloads || 0} downloads ${file.isLatest ? '<span class="badge">Latest</span>' : ''}</div>
           </div>
           <div class="file-meta">Uploaded: ${uploadedDate}</div>
+          ${file.description ? `<div class="file-desc">${escapeHtml(file.description)}</div>` : ''}
           <div class="file-actions">
-            <button class="download-btn" data-download="${file.publicUrl || file.downloadUrl}">Download</button>
+            <button class="download-btn" data-download="/api/download?id=${file.id}">Download</button>
             <button class="copy-btn" data-share="${file.publicUrl || file.shareUrl}">Copy share link</button>
             <button class="delete-btn" data-delete="${file.id}">Delete</button>
           </div>
@@ -72,6 +73,7 @@ function renderFiles(files) {
 
   filesList.querySelectorAll('[data-download]').forEach((btn) => {
     btn.addEventListener('click', () => {
+      // route through our download endpoint so downloads are recorded
       window.open(btn.getAttribute('data-download'), '_blank');
     });
   });
@@ -174,3 +176,13 @@ uploadForm.addEventListener('submit', async (event) => {
 refreshBtn.addEventListener('click', loadFiles);
 
 loadFiles();
+
+// helper to avoid XSS when showing descriptions
+function escapeHtml(unsafe) {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
