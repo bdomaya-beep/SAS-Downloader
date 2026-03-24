@@ -7,20 +7,60 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+
     <main class="page">
       <header class="hero">
-        <h1>Admin Console</h1>
-        <p>Manage uploads, mark latest versions, edit descriptions, and remove files.</p>
+        <h1>DropVault Admin</h1>
+        <p>Securely upload releases, manage metadata, and publish updates for viewers.</p>
       </header>
 
       <section class="card admin-panel">
-        <div class="admin-top">
-          <input id="adminPass" type="password" placeholder="Admin password" />
-          <button id="loginBtn">Unlock</button>
+        <div id="authBlock">
+          <h2>Admin Access</h2>
+          <p class="helper-text">Only authenticated admins can upload files and edit release information.</p>
+          <div class="admin-top">
+            <input id="adminPass" type="password" placeholder="Admin password" />
+            <button id="loginBtn" type="button">Unlock</button>
+          </div>
+          <p id="authStatus" class="status"></p>
         </div>
 
         <div id="adminArea" style="display:none; margin-top:1rem">
           <div id="adminDashboard"></div>
+
+          <section class="card inner-card">
+            <h3>Upload New File</h3>
+            <form id="adminUploadForm" class="upload-form">
+              <label class="file-picker" for="adminFileInput">
+                <span>Select file</span>
+                <input id="adminFileInput" type="file" required />
+              </label>
+
+              <div class="field-grid">
+                <label>
+                  <span>Version *</span>
+                  <input id="versionInput" type="text" placeholder="e.g. 2.4.1" required />
+                </label>
+                <label>
+                  <span>Description (optional)</span>
+                  <input id="descriptionInput" type="text" placeholder="Short summary" />
+                </label>
+              </div>
+
+              <label>
+                <span>What changed? *</span>
+                <textarea id="releaseNotesInput" rows="4" placeholder="List updates included in this version" required></textarea>
+              </label>
+
+              <div class="form-actions">
+                <button id="adminUploadBtn" type="submit">Upload and Publish</button>
+              </div>
+            </form>
+            <p id="uploadStatus" class="status"></p>
+          </section>
+
           <div class="files-head">
             <h2>Files</h2>
             <button id="refreshAdmin">Refresh</button>

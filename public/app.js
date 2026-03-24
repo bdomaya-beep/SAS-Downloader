@@ -1,8 +1,10 @@
-const uploadForm = document.getElementById('uploadForm');
-const fileInput = document.getElementById('fileInput');
-const uploadStatus = document.getElementById('uploadStatus');
 const filesList = document.getElementById('filesList');
 const refreshBtn = document.getElementById('refreshBtn');
+const detailsModal = document.getElementById('detailsModal');
+const detailsBody = document.getElementById('detailsBody');
+const closeDetailsBtn = document.getElementById('closeDetailsBtn');
+
+let filesCache = [];
 
 function formatBytes(bytes) {
   if (!bytes) return '0 B';
@@ -16,11 +18,6 @@ function formatBytes(bytes) {
   return `${size.toFixed(size >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
-function setStatus(message, isError = false) {
-  uploadStatus.textContent = message;
-  uploadStatus.style.color = isError ? 'var(--danger)' : 'var(--muted)';
-}
-
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -30,29 +27,16 @@ async function copyToClipboard(text) {
   }
 }
 
-async function deleteFile(id) {
-  const ok = confirm('Delete this file?');
-  if (!ok) return;
-
-  const res = await fetch(`/api/delete/${id}`, { method: 'DELETE' });
-  const data = await res.json();
-  if (!res.ok) {
-    alert(data.error || 'Delete failed');
-    return;
-  }
-
-  await loadFiles();
-}
-
 function renderFiles(files) {
   if (!files.length) {
-    filesList.innerHTML = '<div class="empty">No uploaded files yet.</div>';
+    filesList.innerHTML = '<div class="empty">No files are available yet.</div>';
     return;
   }
 
   filesList.innerHTML = files
     .map((file) => {
       const uploadedDate = new Date(file.uploadedAt).toLocaleString();
+      const downloadTarget = file.downloadUrl || `/api/download?id=${file.id}`;
       return `
         <article class="file-item">
           <div class="file-top">
@@ -62,9 +46,9 @@ function renderFiles(files) {
           <div class="file-meta">Uploaded: ${uploadedDate}</div>
           ${file.description ? `<div class="file-desc">${escapeHtml(file.description)}</div>` : ''}
           <div class="file-actions">
-            <button class="download-btn" data-download="/api/download?id=${file.id}">Download</button>
+            <button class="download-btn" data-download="${downloadTarget}">Download</button>
             <button class="copy-btn" data-share="${file.publicUrl || file.shareUrl}">Copy share link</button>
-            <button class="delete-btn" data-delete="${file.id}">Delete</button>
+            <button class="ghost-btn" data-details="${file.id}">Details</button>
           </div>
         </article>
       `;
@@ -84,11 +68,57 @@ function renderFiles(files) {
     });
   });
 
-  filesList.querySelectorAll('[data-delete]').forEach((btn) => {
+  filesList.querySelectorAll('[data-details]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      deleteFile(btn.getAttribute('data-delete'));
+      openDetails(btn.getAttribute('data-details'));
     });
   });
+}
+
+function openDetails(id) {
+  const file = filesCache.find((entry) => entry.id === id);
+  if (!file) return;
+
+  const history = (file.history || []).slice().sort((a, b) => new Date(b.when) - new Date(a.when));
+  const releaseNotes = file.releaseNotes || (history[0] && history[0].note) || '';
+
+  detailsBody.innerHTML = `
+    <article class="detail-grid">
+      <div class="detail-row"><span class="detail-label">File Name</span><span>${escapeHtml(file.originalName || '—')}</span></div>
+      <div class="detail-row"><span class="detail-label">Version</span><span>${escapeHtml(file.version || 'Not specified')}</span></div>
+      <div class="detail-row"><span class="detail-label">Size</span><span>${formatBytes(file.size)}</span></div>
+      <div class="detail-row"><span class="detail-label">Downloads</span><span>${file.downloads || 0}</span></div>
+      <div class="detail-row"><span class="detail-label">Uploaded</span><span>${new Date(file.uploadedAt).toLocaleString()}</span></div>
+      <div class="detail-row"><span class="detail-label">Latest</span><span>${file.isLatest ? 'Yes' : 'No'}</span></div>
+    </article>
+    <section class="detail-section">
+      <h4>What was updated</h4>
+      <p>${escapeHtml(releaseNotes || 'No update details provided yet.')}</p>
+    </section>
+    <section class="detail-section">
+      <h4>Description</h4>
+      <p>${escapeHtml(file.description || 'No description provided.')}</p>
+    </section>
+    <section class="detail-section">
+      <h4>Version History</h4>
+      ${history.length
+        ? `<ul class="history-list">${history
+            .map(
+              (entry) =>
+                `<li><strong>${escapeHtml(entry.version || '—')}</strong> — ${escapeHtml(entry.note || 'No details')} <span>${new Date(entry.when).toLocaleString()}</span></li>`
+            )
+            .join('')}</ul>`
+        : '<p>No history entries yet.</p>'}
+    </section>
+  `;
+
+  detailsModal.classList.add('open');
+  detailsModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeDetails() {
+  detailsModal.classList.remove('open');
+  detailsModal.setAttribute('aria-hidden', 'true');
 }
 
 async function loadFiles() {
@@ -99,81 +129,16 @@ async function loadFiles() {
     return;
   }
 
-  renderFiles(data.files || []);
+  filesCache = data.files || [];
+  renderFiles(filesCache);
 }
 
-uploadForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-
-  const file = fileInput.files[0];
-  if (!file) {
-    setStatus('Please choose a file first.', true);
-    return;
-  }
-
-  setStatus('Uploading...');
-
-  try {
-    // 1) ask server for presigned URL
-    const presignResp = await fetch('/api/presign', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: file.name, contentType: file.type || 'application/octet-stream' })
-    });
-    let presign;
-    try {
-      presign = await presignResp.json();
-    } catch (e) {
-      const txt = await presignResp.text();
-      setStatus(`Presign response not JSON: ${txt}`, true);
-      return;
-    }
-    if (!presignResp.ok) {
-      setStatus(presign.error || 'Could not get upload URL.', true);
-      return;
-    }
-
-    // 2) PUT file directly to S3
-    const put = await fetch(presign.uploadUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': file.type || 'application/octet-stream' },
-      body: file
-    });
-    if (!put.ok) {
-      const putText = await put.text();
-      setStatus(`Upload to storage failed: ${put.status} ${putText}`, true);
-      return;
-    }
-
-    // 3) notify server to record metadata
-    const recordResp = await fetch('/api/record', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: presign.key, originalName: file.name, size: file.size, mimeType: file.type, publicUrl: presign.publicUrl })
-    });
-    let recordData;
-    try {
-      recordData = await recordResp.json();
-    } catch (e) {
-      const txt = await recordResp.text();
-      setStatus(`Record response not JSON: ${txt}`, true);
-      return;
-    }
-    if (!recordResp.ok) {
-      setStatus(recordData.error || 'Upload record failed.', true);
-      return;
-    }
-
-    setStatus('Upload complete. Share link ready.');
-    fileInput.value = '';
-    await loadFiles();
-  } catch (err) {
-    console.error('upload error', err);
-    setStatus('Upload failed. Please try again.', true);
-  }
-});
-
 refreshBtn.addEventListener('click', loadFiles);
+closeDetailsBtn.addEventListener('click', closeDetails);
+detailsModal.querySelectorAll('[data-close="details"]').forEach((el) => el.addEventListener('click', closeDetails));
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && detailsModal.classList.contains('open')) closeDetails();
+});
 
 loadFiles();
 

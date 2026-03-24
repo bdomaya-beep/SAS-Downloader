@@ -1,11 +1,29 @@
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 
 const s3 = new S3Client({ region: process.env.AWS_REGION });
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
+  if (!process.env.ADMIN_JWT_SECRET) return res.status(500).json({ error: 'Server misconfigured: ADMIN_JWT_SECRET missing' });
+
+  const auth = (req.headers.authorization || '').toString();
+  const headerToken = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  let cookieToken = null;
+  const cookieHeader = req.headers.cookie || '';
+  cookieHeader.split(';').map(c => c.trim()).forEach(pair => {
+    if (pair.startsWith('admin_token=')) cookieToken = pair.slice('admin_token='.length);
+  });
+  const token = headerToken || cookieToken;
+
+  try {
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    jwt.verify(token, process.env.ADMIN_JWT_SECRET);
+  } catch (e) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
 
   // Basic env validation to provide clearer errors
   if (!process.env.S3_BUCKET || !process.env.AWS_REGION) {

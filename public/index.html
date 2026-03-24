@@ -13,29 +13,28 @@
     <main class="page">
       <header class="hero">
         <h1>DropVault</h1>
-        <p>Upload files, get instant links, and share them like a lightweight MediaFire clone.</p>
+        <p>Browse official releases from the admin team, download files, and view full release details.</p>
       </header>
-
-      <section class="upload-panel card">
-        <h2>Upload a file</h2>
-        <form id="uploadForm">
-          <label class="file-picker" for="fileInput">
-            <span>Select file</span>
-            <input id="fileInput" type="file" name="file" required />
-          </label>
-          <button id="uploadBtn" type="submit">Upload</button>
-        </form>
-        <p id="uploadStatus" class="status"></p>
-      </section>
 
       <section class="files-panel card">
         <div class="files-head">
-          <h2>Your uploaded files</h2>
+          <h2>Available Files</h2>
           <button id="refreshBtn" type="button">Refresh</button>
         </div>
         <div id="filesList" class="files-list"></div>
       </section>
     </main>
+
+    <div id="detailsModal" class="modal" aria-hidden="true">
+      <div class="modal-backdrop" data-close="details"></div>
+      <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="detailsTitle">
+        <div class="modal-head">
+          <h3 id="detailsTitle">File Details</h3>
+          <button id="closeDetailsBtn" class="ghost-btn" type="button">Close</button>
+        </div>
+        <div id="detailsBody" class="details-body"></div>
+      </section>
+    </div>
 
     <script src="app.js"></script>
   </body>

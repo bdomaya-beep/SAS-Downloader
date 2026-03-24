@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
       const prev = items[idx];
       if (fields?.version && fields.version !== prev.version) {
         prev.history = prev.history || [];
-        prev.history.push({ when: new Date().toISOString(), by: 'admin', version: fields.version, note: fields.description || '' });
+        prev.history.push({ when: new Date().toISOString(), by: 'admin', version: fields.version, note: fields.releaseNotes || fields.description || '' });
       }
       items[idx] = { ...items[idx], ...fields };
     } else if (action === 'markLatest') {
