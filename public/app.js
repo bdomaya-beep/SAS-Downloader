@@ -34,7 +34,7 @@ async function deleteFile(id) {
   const ok = confirm('Delete this file?');
   if (!ok) return;
 
-  const res = await fetch(`/api/files/${id}`, { method: 'DELETE' });
+  const res = await fetch(`/api/delete/${id}`, { method: 'DELETE' });
   const data = await res.json();
   if (!res.ok) {
     alert(data.error || 'Delete failed');
@@ -57,12 +57,12 @@ function renderFiles(files) {
         <article class="file-item">
           <div class="file-top">
             <div class="file-name">${file.originalName}</div>
-            <div class="file-meta">${formatBytes(file.size)} • ${file.downloads} downloads</div>
+            <div class="file-meta">${formatBytes(file.size)} • ${file.downloads || 0} downloads</div>
           </div>
           <div class="file-meta">Uploaded: ${uploadedDate}</div>
           <div class="file-actions">
-            <button class="download-btn" data-download="${file.downloadUrl}">Download</button>
-            <button class="copy-btn" data-share="${file.shareUrl}">Copy share link</button>
+            <button class="download-btn" data-download="${file.publicUrl || file.downloadUrl}">Download</button>
+            <button class="copy-btn" data-share="${file.publicUrl || file.shareUrl}">Copy share link</button>
             <button class="delete-btn" data-delete="${file.id}">Delete</button>
           </div>
         </article>
@@ -109,27 +109,64 @@ uploadForm.addEventListener('submit', async (event) => {
     return;
   }
 
-  const formData = new FormData();
-  formData.append('file', file);
-
   setStatus('Uploading...');
 
   try {
-    const res = await fetch('/api/upload', {
+    // 1) ask server for presigned URL
+    const presignResp = await fetch('/api/presign', {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: file.name, contentType: file.type || 'application/octet-stream' })
     });
+    let presign;
+    try {
+      presign = await presignResp.json();
+    } catch (e) {
+      const txt = await presignResp.text();
+      setStatus(`Presign response not JSON: ${txt}`, true);
+      return;
+    }
+    if (!presignResp.ok) {
+      setStatus(presign.error || 'Could not get upload URL.', true);
+      return;
+    }
 
-    const data = await res.json();
-    if (!res.ok) {
-      setStatus(data.error || 'Upload failed.', true);
+    // 2) PUT file directly to S3
+    const put = await fetch(presign.uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      body: file
+    });
+    if (!put.ok) {
+      const putText = await put.text();
+      setStatus(`Upload to storage failed: ${put.status} ${putText}`, true);
+      return;
+    }
+
+    // 3) notify server to record metadata
+    const recordResp = await fetch('/api/record', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: presign.key, originalName: file.name, size: file.size, mimeType: file.type, publicUrl: presign.publicUrl })
+    });
+    let recordData;
+    try {
+      recordData = await recordResp.json();
+    } catch (e) {
+      const txt = await recordResp.text();
+      setStatus(`Record response not JSON: ${txt}`, true);
+      return;
+    }
+    if (!recordResp.ok) {
+      setStatus(recordData.error || 'Upload record failed.', true);
       return;
     }
 
     setStatus('Upload complete. Share link ready.');
     fileInput.value = '';
     await loadFiles();
-  } catch {
+  } catch (err) {
+    console.error('upload error', err);
     setStatus('Upload failed. Please try again.', true);
   }
 });

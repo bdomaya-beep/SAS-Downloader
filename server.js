@@ -8,9 +8,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const ROOT = __dirname;
-const UPLOAD_DIR = path.join(ROOT, 'uploads');
-const DATA_DIR = path.join(ROOT, 'data');
-const DB_FILE = path.join(DATA_DIR, 'files.json');
+// Allow hosting platforms to override storage paths (useful for /tmp on serverless)
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(ROOT, 'uploads');
+const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, 'data');
+const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, 'files.json');
 
 function ensureProjectStorage() {
   if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
