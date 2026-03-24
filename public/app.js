@@ -4,16 +4,6 @@ const refreshBtn = document.getElementById('refreshBtn');
 const detailsModal = document.getElementById('detailsModal');
 const modalBody = document.getElementById('modalBody');
 const modalClose = document.getElementById('modalClose');
-const adminBtn = document.getElementById('adminBtn');
-const adminModal = document.getElementById('adminModal');
-const adminClose = document.getElementById('adminClose');
-const adminPassLocal = document.getElementById('adminPassLocal');
-const adminLoginBtn = document.getElementById('adminLoginBtn');
-const adminMsg = document.getElementById('adminMsg');
-const adminAreaLocal = document.getElementById('adminAreaLocal');
-const adminUploadForm = document.getElementById('adminUploadForm');
-const adminFileInput = document.getElementById('adminFileInput');
-const adminListLocal = document.getElementById('adminListLocal');
 
 function formatBytes(bytes) {
   if (!bytes) return '0 B';
@@ -136,111 +126,6 @@ function renderFiles(files) {
     `;
     detailsModal.style.display = 'block';
   }));
-
-// Admin modal handlers
-if (adminBtn) adminBtn.addEventListener('click', () => { adminModal.style.display = 'flex'; checkAdminState(); });
-if (adminClose) adminClose.addEventListener('click', () => { adminModal.style.display = 'none'; });
-window.addEventListener('click', (e) => { if (e.target === adminModal) adminModal.style.display = 'none'; });
-
-async function checkAdminState() {
-  // check if already authenticated
-  try {
-    const v = await fetch('/api/admin-validate', { method: 'GET', credentials: 'include' });
-    if (v.ok) {
-      adminAreaLocal.style.display = 'block';
-      document.getElementById('adminLoginArea').style.display = 'none';
-      await loadAdminPanel();
-    } else {
-      adminAreaLocal.style.display = 'none';
-      document.getElementById('adminLoginArea').style.display = 'block';
-    }
-  } catch (e) {
-    adminAreaLocal.style.display = 'none';
-    document.getElementById('adminLoginArea').style.display = 'block';
-  }
-}
-
-adminLoginBtn && adminLoginBtn.addEventListener('click', async () => {
-  const pw = (adminPassLocal && adminPassLocal.value) || '';
-  if (!pw) return adminMsg.textContent = 'Enter password';
-  adminMsg.textContent = 'Logging in...';
-  try {
-    const resp = await fetch('/api/admin-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }), credentials: 'include' });
-    const data = await resp.json();
-    if (!resp.ok) return adminMsg.textContent = data.error || 'Login failed';
-    adminMsg.textContent = 'Logged in';
-    adminAreaLocal.style.display = 'block';
-    document.getElementById('adminLoginArea').style.display = 'none';
-    await loadAdminPanel();
-  } catch (e) {
-    adminMsg.textContent = 'Login error';
-  }
-});
-
-async function loadAdminPanel() {
-  adminListLocal.innerHTML = '<div class="empty">Loading...</div>';
-  const res = await fetch('/api/files', { credentials: 'include' });
-  const data = await res.json();
-  if (!res.ok) return adminListLocal.innerHTML = '<div class="empty">Failed to load files.</div>';
-  const files = data.files || [];
-  adminListLocal.innerHTML = files.map(f => {
-    return `
-      <div class="file-item">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div class="file-name">${f.originalName}</div>
-            <div class="file-meta">${formatBytes(f.size)} • ${f.downloads||0} downloads</div>
-          </div>
-          <div style="display:flex;gap:.5rem">
-            <button class="admin-mark" data-id="${f.id}">Mark Latest</button>
-            <button class="admin-del" data-id="${f.id}">Delete</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  adminListLocal.querySelectorAll('.admin-mark').forEach(btn => btn.addEventListener('click', async () => {
-    const id = btn.dataset.id;
-    await adminAction('markLatest', id);
-  }));
-  adminListLocal.querySelectorAll('.admin-del').forEach(btn => btn.addEventListener('click', async () => {
-    const id = btn.dataset.id;
-    if (!confirm('Delete this file?')) return;
-    await adminAction('delete', id);
-  }));
-}
-
-async function adminAction(action, id, fields) {
-  const body = { action, id, fields: fields || {} };
-  const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(body), credentials: 'include' });
-  const data = await res.json();
-  if (!res.ok) return alert(data.error || 'Action failed');
-  await loadAdminPanel();
-  await loadFiles();
-}
-
-// admin upload
-adminUploadForm && adminUploadForm.addEventListener('submit', async (ev) => {
-  ev.preventDefault();
-  const file = adminFileInput.files[0];
-  if (!file) return alert('Select a file');
-  adminMsg.textContent = 'Uploading...';
-  try {
-    const presignResp = await fetch('/api/presign', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ name: file.name, contentType: file.type || 'application/octet-stream' }) });
-    const presign = await presignResp.json();
-    if (!presignResp.ok) return adminMsg.textContent = presign.error || 'Presign failed';
-    const put = await fetch(presign.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'application/octet-stream' }, body: file });
-    if (!put.ok) { adminMsg.textContent = 'Upload to storage failed'; return; }
-    const recordResp = await fetch('/api/record', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ key: presign.key, originalName: file.name, size: file.size, mimeType: file.type, publicUrl: presign.publicUrl }) });
-    const record = await recordResp.json();
-    if (!recordResp.ok) return adminMsg.textContent = record.error || 'Record failed';
-    adminMsg.textContent = 'Upload complete';
-    adminFileInput.value = '';
-    await loadAdminPanel();
-    await loadFiles();
-  } catch (e) { adminMsg.textContent = 'Upload error'; }
-});
 }
 
 async function loadFiles() {
