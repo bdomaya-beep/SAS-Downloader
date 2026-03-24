@@ -11,22 +11,28 @@
     <div class="bg-orb orb-b"></div>
 
     <main class="page">
-      <header class="hero">
-        <h1>ViTech SAS Downloader</h1>
-        <p>SAS Downloader for a Quick and Easy Download for our Clients!</p>
+      <header class="hero hero-compact">
+        <div class="hero-inner">
+          <div class="brand">
+            <div class="logo">ViTech</div>
+            <div class="tag">SAS Downloader</div>
+          </div>
+          <p class="lead">Securely share files and provide easy public downloads.</p>
+        </div>
       </header>
 
-      <!-- Public site is viewer-only. Uploads are managed in the admin panel. -->
-      <section class="intro-panel card">
-        <h2>Browse files</h2>
-        <p class="status">This is the public file listing. To upload or manage files, visit the admin console.</p>
-      </section>
-
+      <!-- Public viewer area (no upload controls here) -->
       <section class="files-panel card">
         <div class="files-head">
-          <h2>Your uploaded files</h2>
-          <button id="refreshBtn" type="button">Refresh</button>
+          <div>
+            <h2>Available Downloads</h2>
+            <div class="sub">Browse and download public files.</div>
+          </div>
+          <div>
+            <button id="refreshBtn" type="button" class="btn secondary">Refresh</button>
+          </div>
         </div>
+
         <div id="filesList" class="files-list"></div>
       </section>
 
@@ -40,5 +46,31 @@
     </main>
 
     <script src="app.js"></script>
+    <!-- Admin modal and quick access button -->
+    <button id="adminBtn" class="admin-btn">Admin</button>
+    <div id="adminModal" class="modal" style="display:none">
+      <div class="modal-content admin-modal">
+        <button id="adminClose" class="modal-close">×</button>
+        <div id="adminLoginArea">
+          <h3>Admin login</h3>
+          <div class="admin-top">
+            <input id="adminPassLocal" type="password" placeholder="Admin password" />
+            <button id="adminLoginBtn">Unlock</button>
+          </div>
+          <p id="adminMsg" class="status"></p>
+        </div>
+        <div id="adminAreaLocal" style="display:none; margin-top:1rem">
+          <h3>Admin panel</h3>
+          <form id="adminUploadForm">
+            <label class="file-picker" for="adminFileInput">
+              <span>Select file to upload</span>
+              <input id="adminFileInput" type="file" name="file" />
+            </label>
+            <button id="adminUploadBtn" type="submit">Upload</button>
+          </form>
+          <div id="adminListLocal" style="margin-top:1rem"></div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

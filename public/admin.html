@@ -8,22 +8,27 @@
   </head>
   <body>
     <main class="page">
-      <header class="hero">
-        <h1>Admin Console</h1>
-        <p>Manage uploads, mark latest versions, edit descriptions, and remove files.</p>
+      <header class="hero hero-compact">
+        <div class="hero-inner">
+          <div class="brand">
+            <div class="logo">ViTech</div>
+            <div class="tag">Admin Console</div>
+          </div>
+          <div class="lead">Manage uploads, metadata, and downloads.</div>
+        </div>
       </header>
 
       <section class="card admin-panel">
         <div class="admin-top">
           <input id="adminPass" type="password" placeholder="Admin password" />
-          <button id="loginBtn">Unlock</button>
+          <button id="loginBtn" class="btn">Unlock</button>
         </div>
 
         <div id="adminArea" style="display:none; margin-top:1rem">
           <div id="adminDashboard"></div>
           <div class="files-head">
             <h2>Files</h2>
-            <button id="refreshAdmin">Refresh</button>
+            <button id="refreshAdmin" class="btn secondary">Refresh</button>
           </div>
           <div id="adminList"></div>
         </div>
