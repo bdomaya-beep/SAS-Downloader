@@ -42,8 +42,8 @@ module.exports = async (req, res) => {
       await s3.send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET, Key: removed.key }));
     }
 
-    // update index without ACL (bucket may disallow ACLs)
-    await s3.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: indexKey, Body: JSON.stringify(items, null, 2), ContentType: 'application/json' }));
+    // update index
+    await s3.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: indexKey, Body: JSON.stringify(items, null, 2), ContentType: 'application/json', ACL: 'public-read' }));
 
     return res.json({ message: 'Deleted' });
   } catch (err) {

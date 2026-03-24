@@ -19,12 +19,11 @@ module.exports = async (req, res) => {
   const safe = name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const key = `${process.env.S3_PREFIX || 'uploads/'}${Date.now()}-${crypto.randomBytes(4).toString('hex')}-${safe}`;
 
-  // Do not set ACL here. Some buckets have Object Ownership "Bucket owner enforced"
-  // which rejects ACLs. Use a bucket policy for public reads instead.
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
     Key: key,
-    ContentType: contentType
+    ContentType: contentType,
+    ACL: 'public-read'
   });
 
   try {
