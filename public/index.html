@@ -11,15 +11,60 @@
     <div class="bg-orb orb-b"></div>
 
     <main class="page">
-      <header class="hero">
-        <h1>DropVault</h1>
-        <p>Browse official releases from the admin team, download files, and view full release details.</p>
+      <header class="topbar card">
+        <div>
+          <h1 class="brand">DropVault</h1>
+          <p class="brand-sub">Release Distribution Portal</p>
+        </div>
+        <a class="ghost-btn link-btn" href="/admin.html">Admin Panel</a>
       </header>
+
+      <section class="hero card hero-card">
+        <div>
+          <h2>Fast, secure, and easy file access</h2>
+          <p>Browse official releases from the admin team, download files safely, and open full change details in one click.</p>
+        </div>
+        <div class="hero-stats">
+          <article>
+            <h3 id="totalFilesStat">0</h3>
+            <p>Total Files</p>
+          </article>
+          <article>
+            <h3 id="totalDownloadsStat">0</h3>
+            <p>Total Downloads</p>
+          </article>
+          <article>
+            <h3 id="latestVersionStat">—</h3>
+            <p>Latest Version</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="card controls-card">
+        <div class="controls-grid">
+          <label>
+            <span>Search files</span>
+            <input id="searchInput" type="text" placeholder="Search by file name, description, or version" />
+          </label>
+          <label>
+            <span>Sort</span>
+            <select id="sortSelect">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="downloads">Most downloaded</option>
+              <option value="name">Name A-Z</option>
+            </select>
+          </label>
+          <div class="controls-action">
+            <button id="refreshBtn" type="button">Refresh</button>
+          </div>
+        </div>
+      </section>
 
       <section class="files-panel card">
         <div class="files-head">
           <h2>Available Files</h2>
-          <button id="refreshBtn" type="button">Refresh</button>
+          <p id="resultsCount" class="results-count"></p>
         </div>
         <div id="filesList" class="files-list"></div>
       </section>
@@ -35,6 +80,8 @@
         <div id="detailsBody" class="details-body"></div>
       </section>
     </div>
+
+    <div id="toast" class="toast" aria-live="polite"></div>
 
     <script src="app.js"></script>
   </body>

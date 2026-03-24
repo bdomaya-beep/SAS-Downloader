@@ -11,13 +11,23 @@
     <div class="bg-orb orb-b"></div>
 
     <main class="page">
-      <header class="hero">
-        <h1>DropVault Admin</h1>
-        <p>Securely upload releases, manage metadata, and publish updates for viewers.</p>
+      <header class="topbar card">
+        <div>
+          <h1 class="brand">DropVault Admin</h1>
+          <p class="brand-sub">Release Management Console</p>
+        </div>
+        <a class="ghost-btn link-btn" href="/">Open User View</a>
       </header>
 
+      <section class="hero card hero-card">
+        <div>
+          <h2>Publish releases with confidence</h2>
+          <p>Upload versioned files, write update notes, and keep your user-facing releases clean and up to date.</p>
+        </div>
+      </section>
+
       <section class="card admin-panel">
-        <div id="authBlock">
+        <div id="authBlock" class="card inner-card">
           <h2>Admin Access</h2>
           <p class="helper-text">Only authenticated admins can upload files and edit release information.</p>
           <div class="admin-top">
@@ -69,6 +79,8 @@
         </div>
       </section>
     </main>
+
+    <div id="toast" class="toast" aria-live="polite"></div>
 
     <script src="admin.js"></script>
   </body>

@@ -11,6 +11,9 @@ const descriptionInput = document.getElementById('descriptionInput');
 const releaseNotesInput = document.getElementById('releaseNotesInput');
 const uploadStatus = document.getElementById('uploadStatus');
 const adminUploadBtn = document.getElementById('adminUploadBtn');
+const toast = document.getElementById('toast');
+
+let toastTimer;
 
 function setAuthStatus(message, isError = false) {
   authStatus.textContent = message;
@@ -20,6 +23,17 @@ function setAuthStatus(message, isError = false) {
 function setUploadStatus(message, isError = false) {
   uploadStatus.textContent = message;
   uploadStatus.style.color = isError ? 'var(--danger)' : 'var(--muted)';
+}
+
+function showToast(message, isError = false) {
+  toast.textContent = message;
+  toast.classList.add('show');
+  toast.classList.toggle('error', isError);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+    toast.classList.remove('error');
+  }, 2400);
 }
 
 // on load, validate session (cookie or header)
@@ -87,6 +101,7 @@ loginBtn.addEventListener('click', async () => {
     try { localStorage.setItem('admin_token', data.token); } catch (e) {}
     adminArea.style.display = 'block';
     setAuthStatus('Signed in successfully.');
+    showToast('Welcome back.');
     await loadAdminFiles();
   } catch (e) {
     setAuthStatus('Login failed.', true);
@@ -166,6 +181,7 @@ adminUploadForm.addEventListener('submit', async (event) => {
     }
 
     setUploadStatus('Upload complete and published.');
+    showToast('File uploaded successfully.');
     adminUploadForm.reset();
     await loadAdminFiles();
   } catch (err) {
@@ -179,7 +195,10 @@ adminUploadForm.addEventListener('submit', async (event) => {
 async function loadAdminFiles() {
   const res = await fetch('/api/files', { credentials: 'include' });
   const data = await res.json();
-  if (!res.ok) return alert('Failed to load files');
+  if (!res.ok) {
+    showToast('Failed to load files.', true);
+    return;
+  }
   renderAdmin(data.files || []);
   renderDashboard(data.files || []);
 }
@@ -274,9 +293,10 @@ async function adminAction(action, id, fields) {
   const res = await fetch('/api/admin', { method: 'POST', headers, body: JSON.stringify(body), credentials: 'include' });
   const data = await res.json();
   if (!res.ok) {
-    alert(data.error || 'Action failed');
+    showToast(data.error || 'Action failed.', true);
     return;
   }
+  showToast('Changes saved.');
   await loadAdminFiles();
 }
 
