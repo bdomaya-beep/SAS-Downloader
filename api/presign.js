@@ -23,11 +23,11 @@ module.exports = async (req, res) => {
     Bucket: process.env.S3_BUCKET,
     Key: key,
     ContentType: contentType,
-    ACL: 'public-read'
   });
 
   try {
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
+    const expires = parseInt(process.env.PRESIGN_EXPIRES || '300', 10); // seconds
+    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: expires });
     const publicUrl = `https://${process.env.S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
     return res.json({ uploadUrl, key, publicUrl });
   } catch (err) {
