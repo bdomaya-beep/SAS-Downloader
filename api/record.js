@@ -50,12 +50,13 @@ module.exports = async (req, res) => {
 
     items.push(record);
 
+    // Write index without ACLs. Bucket may enforce owner-only ACLs; use a bucket
+    // policy to allow public reads if needed instead of object ACLs.
     await s3.send(new PutObjectCommand({
       Bucket: process.env.S3_BUCKET,
       Key: indexKey,
       Body: JSON.stringify(items, null, 2),
-      ContentType: 'application/json',
-      ACL: 'public-read'
+      ContentType: 'application/json'
     }));
 
     return res.status(201).json({ record });
